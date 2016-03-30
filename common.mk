@@ -1,11 +1,11 @@
 #Common headers
-common_includes := $(LOCAL_PATH)/../libgralloc
-common_includes += $(LOCAL_PATH)/../liboverlay
-common_includes += $(LOCAL_PATH)/../libcopybit
-common_includes += $(LOCAL_PATH)/../libqdutils
-common_includes += $(LOCAL_PATH)/../libhwcomposer
-common_includes += $(LOCAL_PATH)/../libhdmi
-common_includes += $(LOCAL_PATH)/../libqservice
+common_includes := $(call project-path-for,qcom-display)/libgralloc
+common_includes += $(call project-path-for,qcom-display)/liboverlay
+common_includes += $(call project-path-for,qcom-display)/libcopybit
+common_includes += $(call project-path-for,qcom-display)/libqdutils
+common_includes += $(call project-path-for,qcom-display)/libhwcomposer
+common_includes += $(call project-path-for,qcom-display)/libhdmi
+common_includes += $(call project-path-for,qcom-display)/libqservice
 
 common_header_export_path := qcom/display
 
@@ -20,12 +20,13 @@ ifeq ($(ARCH_ARM_HAVE_NEON),true)
     common_flags += -D__ARM_HAVE_NEON
 endif
 
-ifeq ($(call is-board-platform-in-list, $(MSM_VIDC_TARGET_LIST)), true)
-    common_flags += -DVENUS_COLOR_FORMAT
-endif
-
 ifeq ($(call is-board-platform-in-list, $(MASTER_SIDE_CP_TARGET_LIST)), true)
     common_flags += -DMASTER_SIDE_CP
+endif
+
+ifeq ($(call is-board-platform-in-list, msm8974 msm8226 msm8610 apq8084 \
+        mpq8092 msm_bronze msm8916 msm8994 msm8952), true)
+    common_flags += -DVENUS_COLOR_FORMAT
 endif
 
 common_deps  :=

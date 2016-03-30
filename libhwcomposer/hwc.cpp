@@ -48,6 +48,7 @@ using namespace qQdcm;
 
 #define VSYNC_DEBUG 0
 #define POWER_MODE_DEBUG 1
+#define CURSOR_DEBUG 0
 
 static int hwc_device_open(const struct hw_module_t* module,
                            const char* name,
@@ -188,6 +189,18 @@ static void setNumActiveDisplays(hwc_context_t *ctx, int numDisplays,
              */
             ctx->numActiveDisplays += 1;
         }
+    }
+}
+
+static bool validDisplay(int disp) {
+    switch(disp) {
+        case HWC_DISPLAY_PRIMARY:
+        case HWC_DISPLAY_EXTERNAL:
+        case HWC_DISPLAY_VIRTUAL:
+            return true;
+            break;
+        default:
+            return false;
     }
 }
 
@@ -424,6 +437,10 @@ static int hwc_eventControl(struct hwc_composer_device_1* dev, int dpy,
     ATRACE_CALL();
     int ret = 0;
     hwc_context_t* ctx = (hwc_context_t*)(dev);
+    if(!validDisplay(dpy)) {
+        return -EINVAL;
+    }
+
     switch(event) {
         case HWC_EVENT_VSYNC:
             if (ctx->vstate.enable == enable)
@@ -453,6 +470,17 @@ static int hwc_setCursorPositionAsync(struct hwc_composer_device_1* dev,
         int dpy, int x, int y) {
     int ret = -1;
     hwc_context_t* ctx = (hwc_context_t*)(dev);
+
+    if(!validDisplay(dpy)) {
+        return -EINVAL;
+    }
+
+    if((x < 0) || (x > (int)ctx->dpyAttr[dpy].xres) ||
+       (y < 0) || (y > (int)ctx->dpyAttr[dpy].yres)) {
+        ALOGD_IF(CURSOR_DEBUG, "%s: Invalid cursor position x=%d y=%d",
+                __FUNCTION__,x,y);
+        return 0;
+    }
     switch(dpy) {
         case HWC_DISPLAY_PRIMARY:
         {
@@ -481,6 +509,11 @@ static int hwc_setPowerMode(struct hwc_composer_device_1* dev, int dpy,
     int ret = 0, value = 0;
 
     Locker::Autolock _l(ctx->mDrawLock);
+
+    if(!validDisplay(dpy)) {
+        return -EINVAL;
+    }
+
     ALOGD_IF(POWER_MODE_DEBUG, "%s: Setting mode %d on display: %d",
             __FUNCTION__, mode, dpy);
 
@@ -814,6 +847,11 @@ int hwc_getDisplayConfigs(struct hwc_composer_device_1* dev, int disp,
     hwc_context_t* ctx = (hwc_context_t*)(dev);
 
     Locker::Autolock _l(ctx->mDrawLock);
+
+    if(!validDisplay(disp)) {
+        return -EINVAL;
+    }
+
     bool hotPluggable = isHotPluggable(ctx, disp);
     bool isVirtualDisplay = (disp == HWC_DISPLAY_VIRTUAL);
     // If hotpluggable or virtual displays are inactive return error
@@ -853,6 +891,11 @@ int hwc_getDisplayAttributes(struct hwc_composer_device_1* dev, int disp,
     hwc_context_t* ctx = (hwc_context_t*)(dev);
 
     Locker::Autolock _l(ctx->mDrawLock);
+
+    if(!validDisplay(disp)) {
+        return -EINVAL;
+    }
+
     bool hotPluggable = isHotPluggable(ctx, disp);
     bool isVirtualDisplay = (disp == HWC_DISPLAY_VIRTUAL);
     // If hotpluggable or virtual displays are inactive return error
@@ -959,6 +1002,10 @@ int hwc_getActiveConfig(struct hwc_composer_device_1* dev, int disp)
     hwc_context_t* ctx = (hwc_context_t*)(dev);
 
     Locker::Autolock _l(ctx->mDrawLock);
+    if(!validDisplay(disp)) {
+        return -EINVAL;
+    }
+
     bool hotPluggable = isHotPluggable(ctx, disp);
     bool isVirtualDisplay = (disp == HWC_DISPLAY_VIRTUAL);
     // If hotpluggable or virtual displays are inactive return error
@@ -981,6 +1028,10 @@ int hwc_setActiveConfig(struct hwc_composer_device_1* dev, int disp, int index)
     hwc_context_t* ctx = (hwc_context_t*)(dev);
 
     Locker::Autolock _l(ctx->mDrawLock);
+    if(!validDisplay(disp)) {
+        return -EINVAL;
+    }
+
     bool hotPluggable = isHotPluggable(ctx, disp);
     bool isVirtualDisplay = (disp == HWC_DISPLAY_VIRTUAL);
     // If hotpluggable or virtual displays are inactive return error
